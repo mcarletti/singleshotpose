@@ -48,7 +48,7 @@ def train(epoch):
     # Initialize timer
     t0 = time.time()
 
-    # Get validation file names
+    # Get training file names
     with open(trainlist) as fp:
         tmp_files = fp.readlines()
         train_files = [datafolder + item.rstrip() for item in tmp_files]
@@ -378,8 +378,13 @@ if __name__ == "__main__":
     # Specify the number of workers
     kwargs = {'num_workers': num_workers, 'pin_memory': True} if use_cuda else {}
 
+    # Get testing file names
+    with open(testlist) as fp:
+        tmp_files = fp.readlines()
+        test_files = [datafolder + item.rstrip() for item in tmp_files]
+
     # Get the dataloader for test data
-    test_loader = torch.utils.data.DataLoader(dataset.listDataset(testlist, shape=(test_width, test_height),
+    test_loader = torch.utils.data.DataLoader(dataset.listDataset(test_files, shape=(test_width, test_height),
                                                                            shuffle=False,
                                                                            transform=transforms.Compose([transforms.ToTensor(),]), 
                                                                            train=False),
@@ -400,7 +405,7 @@ if __name__ == "__main__":
     optimizer = optim.SGD(model.parameters(), lr=learning_rate/batch_size, momentum=momentum, dampening=0, weight_decay=decay*batch_size)
     # optimizer = optim.Adam(model.parameters(), lr=0.001) # Adam optimization
 
-    evaluate = False
+    evaluate = True
     if evaluate:
         logging('evaluating ...')
         test(0, 0)
