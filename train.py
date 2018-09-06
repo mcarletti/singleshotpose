@@ -48,8 +48,13 @@ def train(epoch):
     # Initialize timer
     t0 = time.time()
 
+    # Get validation file names
+    with open(trainlist) as fp:
+        tmp_files = fp.readlines()
+        train_files = [datafolder + item.rstrip() for item in tmp_files]
+
     # Get the dataloader for training dataset
-    train_loader = torch.utils.data.DataLoader(dataset.listDataset(trainlist, shape=(init_width, init_height),
+    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_files, shape=(init_width, init_height),
                                                             shuffle=True,
                                                             transform=transforms.Compose([transforms.ToTensor(),]), 
                                                             train=True, 
@@ -276,34 +281,43 @@ def test(epoch, niter):
 
 if __name__ == "__main__":
 
+    datafolder = '../DATA/linemod/'
+    cname = 'ape'
+
+    datacfg = 'cfg/' + cname + '.data'
+    cfgfile = 'cfg/yolo-pose.cfg'
+    weightfile = datafolder + 'backup/' + cname + '/model_backup.weights'
+
+    '''
     # Training settings
     datacfg       = sys.argv[1]
     cfgfile       = sys.argv[2]
     weightfile    = sys.argv[3]
+    '''
 
     # Parse configuration files
     data_options  = read_data_cfg(datacfg)
     net_options   = parse_cfg(cfgfile)[0]
-    trainlist     = data_options['train']
-    testlist      = data_options['valid']
+    trainlist     = datafolder + data_options['train']
+    testlist      = datafolder + data_options['valid']
     nsamples      = file_lines(trainlist)
     gpus          = data_options['gpus']  # e.g. 0,1,2,3
     gpus = '0'
-    meshname      = data_options['mesh']
+    meshname      = datafolder + data_options['mesh']
     num_workers   = int(data_options['num_workers'])
-    backupdir     = data_options['backup']
+    backupdir     = datafolder + data_options['backup']
     diam          = float(data_options['diam'])
     vx_threshold  = diam * 0.1
     if not os.path.exists(backupdir):
         makedirs(backupdir)
-    batch_size    = int(net_options['batch'])
+    batch_size    = 1 # int(net_options['batch'])
     max_batches   = int(net_options['max_batches'])
     learning_rate = float(net_options['learning_rate'])
     momentum      = float(net_options['momentum'])
     decay         = float(net_options['decay'])
     steps         = [float(step) for step in net_options['steps'].split(',')]
     scales        = [float(scale) for scale in net_options['scales'].split(',')]
-    bg_file_names = get_all_files('VOCdevkit/VOC2012/JPEGImages')
+    bg_file_names = get_all_files(datafolder + 'VOCdevkit/VOC2012/JPEGImages')
 
     # Train parameters
     max_epochs    = 700 # max_batches*batch_size/nsamples+1
@@ -343,7 +357,7 @@ if __name__ == "__main__":
     init_height       = model.height
     test_width        = 672
     test_height       = 672
-    init_epoch        = model.seen/nsamples 
+    init_epoch        = int(model.seen/nsamples)
 
     # Variable to save
     training_iters          = []
