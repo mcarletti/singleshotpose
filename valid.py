@@ -17,19 +17,17 @@ def makedirs(path):
     if not os.path.exists( path ):
         os.makedirs( path )
 
-def valid(datacfg, cfgfile, weightfile, outfile):
+def valid(datafolder, datacfg, cfgfile, weightfile, outfile):
     def truths_length(truths):
         for i in range(50):
             if truths[i][1] == 0:
                 return i
 
-    root = '../DATA/linemod/'
-
     # Parse configuration files
     options      = read_data_cfg(datacfg)
-    valid_images = root + options['valid']
-    meshname     = root + options['mesh']
-    backupdir    = root + options['backup']
+    valid_images = datafolder + options['valid']
+    meshname     = datafolder + options['mesh']
+    backupdir    = datafolder + options['backup']
     name         = options['name']
     if not os.path.exists(backupdir):
         makedirs(backupdir)
@@ -89,7 +87,7 @@ def valid(datacfg, cfgfile, weightfile, outfile):
     # Get validation file names
     with open(valid_images) as fp:
         tmp_files = fp.readlines()
-        valid_files = [root + item.rstrip() for item in tmp_files]
+        valid_files = [datafolder + item.rstrip() for item in tmp_files]
     
     # Specicy model, load pretrained weights, pass to GPU and set the module in evaluation mode
     model = Darknet(cfgfile)
@@ -258,13 +256,14 @@ def valid(datacfg, cfgfile, weightfile, outfile):
 
 if __name__ == '__main__':
 
+    datafolder = '../DATA/linemod/'
     cname = 'ape'
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
-    weightfile = '/home/marco/Documents/projects/DATA/linemod/backup/' + cname + '/model_backup.weights'
+    weightfile = datafolder + 'backup/' + cname + '/model_backup.weights'
     outfile = 'comp4_det_test_'
-    valid(datacfg, cfgfile, weightfile, outfile)
+    valid(datafolder, datacfg, cfgfile, weightfile, outfile)
 
     '''
     import sys
