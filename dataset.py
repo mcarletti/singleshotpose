@@ -14,21 +14,23 @@ from utils import read_truths_args, read_truths, get_all_files
 class listDataset(Dataset):
 
     def __init__(self, root, shape=None, shuffle=True, transform=None, target_transform=None, train=False, seen=0, batch_size=64, num_workers=4, bg_file_names=None):
-       with open(root, 'r') as file:
-           self.lines = file.readlines()
+        
+        self.lines = root
+        #with open(root, 'r') as file:
+        #    self.lines = file.readlines()
 
-       if shuffle:
-           random.shuffle(self.lines)
+        if shuffle:
+            random.shuffle(self.lines)
 
-       self.nSamples         = len(self.lines)
-       self.transform        = transform
-       self.target_transform = target_transform
-       self.train            = train
-       self.shape            = shape
-       self.seen             = seen
-       self.batch_size       = batch_size
-       self.num_workers      = num_workers
-       self.bg_file_names    = bg_file_names
+        self.nSamples         = len(self.lines)
+        self.transform        = transform
+        self.target_transform = target_transform
+        self.train            = train
+        self.shape            = shape
+        self.seen             = seen
+        self.batch_size       = batch_size
+        self.num_workers      = num_workers
+        self.bg_file_names    = bg_file_names
 
     def __len__(self):
         return self.nSamples

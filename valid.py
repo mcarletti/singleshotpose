@@ -23,11 +23,13 @@ def valid(datacfg, cfgfile, weightfile, outfile):
             if truths[i][1] == 0:
                 return i
 
+    root = '../DATA/linemod/'
+
     # Parse configuration files
     options      = read_data_cfg(datacfg)
-    valid_images = options['valid']
-    meshname     = options['mesh']
-    backupdir    = options['backup']
+    valid_images = root + options['valid']
+    meshname     = root + options['mesh']
+    backupdir    = root + options['backup']
     name         = options['name']
     if not os.path.exists(backupdir):
         makedirs(backupdir)
@@ -87,7 +89,7 @@ def valid(datacfg, cfgfile, weightfile, outfile):
     # Get validation file names
     with open(valid_images) as fp:
         tmp_files = fp.readlines()
-        valid_files = [item.rstrip() for item in tmp_files]
+        valid_files = [root + item.rstrip() for item in tmp_files]
     
     # Specicy model, load pretrained weights, pass to GPU and set the module in evaluation mode
     model = Darknet(cfgfile)
@@ -97,10 +99,8 @@ def valid(datacfg, cfgfile, weightfile, outfile):
     model.eval()
 
     # Get the parser for the test dataset
-    valid_dataset = dataset.listDataset(valid_images, shape=(test_width, test_height),
-                       shuffle=False,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),]))
+    valid_dataset = dataset.listDataset(valid_files, shape=(test_width, test_height), shuffle=False, transform=transforms.Compose([transforms.ToTensor(),]))
+    #valid_dataset = dataset.listDataset(valid_images, shape=(test_width, test_height), shuffle=False, transform=transforms.Compose([transforms.ToTensor(),]))
     valid_batchsize = 1
 
     # Specify the number of workers for multiple processing, get the dataloader for the test dataset
@@ -257,6 +257,16 @@ def valid(datacfg, cfgfile, weightfile, outfile):
         scipy.io.savemat(predfile, {'R_gts': gts_rot, 't_gts':gts_trans, 'corner_gts': gts_corners2D, 'R_prs': preds_rot, 't_prs':preds_trans, 'corner_prs': preds_corners2D})
 
 if __name__ == '__main__':
+
+    cname = 'ape'
+
+    datacfg = 'cfg/' + cname + '.data'
+    cfgfile = 'cfg/yolo-pose.cfg'
+    weightfile = '/home/marco/Documents/projects/DATA/linemod/backup/' + cname + '/model_backup.weights'
+    outfile = 'comp4_det_test_'
+    valid(datacfg, cfgfile, weightfile, outfile)
+
+    '''
     import sys
     if len(sys.argv) == 4:
         datacfg = sys.argv[1]
@@ -267,3 +277,4 @@ if __name__ == '__main__':
     else:
         print('Usage:')
         print(' python valid.py datacfg cfgfile weightfile')
+    '''
