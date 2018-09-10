@@ -92,7 +92,7 @@ def valid(datafolder, datacfg, cfgfile, weightfile, outfile):
     # Specicy model, load pretrained weights, pass to GPU and set the module in evaluation mode
     model = Darknet(cfgfile)
     model.print_network()
-    model.load_weights(weightfile)
+    model.load_weights(datafolder + weightfile)
     model.cuda()
     model.eval()
 
@@ -261,7 +261,7 @@ if __name__ == '__main__':
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
-    weightfile = datafolder + 'backup/' + cname + '/model_backup.weights'
+    weightfile = 'backup/' + cname + '/model_backup.weights'
     outfile = 'comp4_det_test_'
     valid(datafolder, datacfg, cfgfile, weightfile, outfile)
 
