@@ -312,7 +312,7 @@ if __name__ == "__main__":
     vx_threshold  = diam * 0.1
     if not os.path.exists(backupdir):
         makedirs(backupdir)
-    batch_size    = 1 # int(net_options['batch'])
+    batch_size    = int(net_options['batch'])
     max_batches   = int(net_options['max_batches'])
     learning_rate = float(net_options['learning_rate'])
     momentum      = float(net_options['momentum'])
