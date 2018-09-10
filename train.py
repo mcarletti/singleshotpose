@@ -163,8 +163,9 @@ def test(epoch, niter):
         if use_cuda:
             data = data.cuda()
             target = target.cuda()
-        # Wrap tensors in Variable class, set volatile=True for inference mode and to use minimal memory during inference
-        data = Variable(data, volatile=True)
+        with torch.no_grad():
+            # Wrap tensors in Variable class, set volatile=True for inference mode and to use minimal memory during inference
+            data = Variable(data)
         t2 = time.time()
         # Formward pass
         output = model(data).data  
@@ -286,7 +287,8 @@ if __name__ == "__main__":
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
-    weightfile = datafolder + 'backup/' + cname + '/model_backup.weights'
+    weightfile = datafolder + 'backup/' + cname + '/init.weights' # pretrained as in the paper
+    #weightfile = datafolder + 'cfg/darknet19_448.conv.23' # pretrained on ImageNet
 
     '''
     # Training settings
@@ -405,7 +407,7 @@ if __name__ == "__main__":
     optimizer = optim.SGD(model.parameters(), lr=learning_rate/batch_size, momentum=momentum, dampening=0, weight_decay=decay*batch_size)
     # optimizer = optim.Adam(model.parameters(), lr=0.001) # Adam optimization
 
-    evaluate = True
+    evaluate = False
     if evaluate:
         logging('evaluating ...')
         test(0, 0)
