@@ -12,7 +12,16 @@ import dataset
 from utils import *
 from MeshPly import MeshPly
 
-def valid(datafolder, datacfg, cfgfile, weightfile, outfile, imagefilename):
+def load_model(cfgfile, weightfile):
+    # Specify model, load pretrained weights, pass to GPU and set the module in evaluation mode
+    model = Darknet(cfgfile)
+    model.print_network()
+    model.load_weights(weightfile)
+    model.cuda()
+    model.eval()
+    return model
+
+def valid(model, datafolder, datacfg, imagefilename):
 
     # Parse configuration files
     options      = read_data_cfg(datacfg)
@@ -41,13 +50,6 @@ def valid(datafolder, datacfg, cfgfile, weightfile, outfile, imagefilename):
 
     # Read intrinsic camera parameters
     internal_calibration = get_camera_intrinsic()
-    
-    # Specicy model, load pretrained weights, pass to GPU and set the module in evaluation mode
-    model = Darknet(cfgfile)
-    model.print_network()
-    model.load_weights(datafolder + weightfile)
-    model.cuda()
-    model.eval()
 
     logging("   Testing {}...".format(name))
 
@@ -113,24 +115,7 @@ if __name__ == '__main__':
     cname = 'ape'
     imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/000000.jpg'
 
-    R, t = valid(datafolder, 'cfg/' + cname + '.data', 'cfg/yolo-pose.cfg', 'backup/' + cname + '/model_backup.weights', 'comp4_det_test_', imagefilename)
+    model = load_model('cfg/yolo-pose.cfg', datafolder + 'backup/' + cname + '/model_backup.weights')
+    R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
     logging("    R: {}".format(R))
     logging("    t: {}".format(t))
-
-    '''
-    import sys
-    if len(sys.argv) == 5:
-
-        datacfg = sys.argv[1]
-        cfgfile = sys.argv[2]
-        weightfile = sys.argv[3]
-        imagefilename = sys.argv[4]
-        outfile = 'comp4_det_test_'
-        R, t = valid(datacfg, cfgfile, weightfile, outfile, imagefilename)
-        logging("    R: {}".format(R))
-        logging("    t: {}".format(t))
-
-    else:
-        print('Usage:')
-        print(' python valid.py datacfg cfgfile weightfile imagefilename')
-    '''
