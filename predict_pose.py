@@ -115,7 +115,12 @@ if __name__ == '__main__':
     cname = 'ape'
     imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/000000.jpg'
 
-    model = load_model('cfg/yolo-pose.cfg', datafolder + 'backup/' + cname + '/model_backup.weights')
+    modelweights = datafolder + 'backup/' + cname
+    if os.path.exists(modelweights + '/model.weights'):
+        modelweights = modelweights + '/model.weights'
+    else:
+        modelweights = modelweights + '/model_backup.weights'
+    model = load_model('cfg/yolo-pose.cfg', modelweights)
     R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
     logging("    R: {}".format(R))
     logging("    t: {}".format(t))
