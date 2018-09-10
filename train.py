@@ -41,27 +41,12 @@ def adjust_learning_rate(optimizer, batch):
         param_group['lr'] = lr/batch_size
     return lr
 
-def train(epoch):
+def train(train_loader, epoch):
 
     global processed_batches
     
     # Initialize timer
     t0 = time.time()
-
-    # Get training file names
-    with open(trainlist) as fp:
-        tmp_files = fp.readlines()
-        train_files = [datafolder + item.rstrip() for item in tmp_files]
-
-    # Get the dataloader for training dataset
-    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_files, shape=(init_width, init_height),
-                                                            shuffle=True,
-                                                            transform=transforms.Compose([transforms.ToTensor(),]), 
-                                                            train=True, 
-                                                            seen=model.seen,
-                                                            batch_size=batch_size,
-                                                            num_workers=num_workers, bg_file_names=bg_file_names),
-                                                batch_size=batch_size, shuffle=False, **kwargs)
 
     # TRAINING
     lr = adjust_learning_rate(optimizer, processed_batches)
@@ -95,7 +80,8 @@ def train(epoch):
         # Compute loss, grow an array of losses for saving later on
         loss = region_loss(output, target)
         training_iters.append(epoch * math.ceil(len(train_loader.dataset) / float(batch_size) ) + niter)
-        training_losses.append(convert2cpu(loss.data))
+        #training_losses.append(convert2cpu(loss.data))
+        training_losses.append(loss.to('cpu').data)
         niter += 1
         t7 = time.time()
         # Backprop: compute gradient of the loss with respect to model parameters
@@ -126,6 +112,12 @@ def train(epoch):
             print('            step : %f' % (avg_time[7]/(batch_idx)))
             print('           total : %f' % (avg_time[8]/(batch_idx)))
         t1 = time.time()
+
+        del output
+        del data
+        del target
+        del loss
+
     t1 = time.time()
     return epoch * math.ceil(len(train_loader.dataset) / float(batch_size) ) + niter - 1 
 
@@ -287,8 +279,8 @@ if __name__ == "__main__":
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
-    weightfile = datafolder + 'backup/' + cname + '/init.weights' # pretrained as in the paper
-    #weightfile = datafolder + 'cfg/darknet19_448.conv.23' # pretrained on ImageNet
+    #weightfile = datafolder + 'backup/' + cname + '/init.weights' # pretrained as in the paper
+    weightfile = datafolder + 'cfg/darknet19_448.conv.23' # pretrained on ImageNet
 
     '''
     # Training settings
@@ -380,6 +372,21 @@ if __name__ == "__main__":
     # Specify the number of workers
     kwargs = {'num_workers': num_workers, 'pin_memory': True} if use_cuda else {}
 
+    # Get training file names
+    with open(trainlist) as fp:
+        tmp_files = fp.readlines()
+        train_files = [datafolder + item.rstrip() for item in tmp_files]
+
+    # Get the dataloader for training dataset
+    train_loader = torch.utils.data.DataLoader(dataset.listDataset(train_files, shape=(init_width, init_height),
+                                                            shuffle=True,
+                                                            transform=transforms.Compose([transforms.ToTensor(),]), 
+                                                            train=True, 
+                                                            seen=model.seen,
+                                                            batch_size=batch_size,
+                                                            num_workers=num_workers, bg_file_names=bg_file_names),
+                                                batch_size=batch_size, shuffle=False, **kwargs)
+
     # Get testing file names
     with open(testlist) as fp:
         tmp_files = fp.readlines()
@@ -414,7 +421,7 @@ if __name__ == "__main__":
     else:
         for epoch in range(init_epoch, max_epochs): 
             # TRAIN
-            niter = train(epoch)
+            niter = train(train_loader, epoch)
             # TEST and SAVE
             if (epoch % 10 == 0) and (epoch is not 0): 
                 test(epoch, niter)
