@@ -175,8 +175,8 @@ class RegionLoss(nn.Module):
 
         # Activation
         output = output.view(nB, nA, (19+nC), nH, nW)
-        x0     = F.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([0]))).view(nB, nA, nH, nW))
-        y0     = F.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([1]))).view(nB, nA, nH, nW))
+        x0     = torch.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([0]))).view(nB, nA, nH, nW))
+        y0     = torch.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([1]))).view(nB, nA, nH, nW))
         x1     = output.index_select(2, Variable(torch.cuda.LongTensor([2]))).view(nB, nA, nH, nW)
         y1     = output.index_select(2, Variable(torch.cuda.LongTensor([3]))).view(nB, nA, nH, nW)
         x2     = output.index_select(2, Variable(torch.cuda.LongTensor([4]))).view(nB, nA, nH, nW)
@@ -193,7 +193,7 @@ class RegionLoss(nn.Module):
         y7     = output.index_select(2, Variable(torch.cuda.LongTensor([15]))).view(nB, nA, nH, nW)
         x8     = output.index_select(2, Variable(torch.cuda.LongTensor([16]))).view(nB, nA, nH, nW)
         y8     = output.index_select(2, Variable(torch.cuda.LongTensor([17]))).view(nB, nA, nH, nW)
-        conf   = F.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([18]))).view(nB, nA, nH, nW))
+        conf   = torch.sigmoid(output.index_select(2, Variable(torch.cuda.LongTensor([18]))).view(nB, nA, nH, nW))
         cls    = output.index_select(2, Variable(torch.linspace(19,19+nC-1,nC).long().cuda()))
         cls    = cls.view(nB*nA, nC, nH*nW).transpose(1,2).contiguous().view(nB*nA*nH*nW, nC)
         t1     = time.time()
@@ -228,7 +228,7 @@ class RegionLoss(nn.Module):
         nGT, nCorrect, coord_mask, conf_mask, cls_mask, tx0, tx1, tx2, tx3, tx4, tx5, tx6, tx7, tx8, ty0, ty1, ty2, ty3, ty4, ty5, ty6, ty7, ty8, tconf, tcls = \
                        build_targets(pred_corners, target.data, self.anchors, nA, nC, nH, nW, self.noobject_scale, self.object_scale, self.thresh, self.seen)
         cls_mask   = (cls_mask == 1)
-        nProposals = int((conf > 0.25).sum().data[0])
+        nProposals = int((conf > 0.25).sum().item())
         tx0        = Variable(tx0.cuda())
         ty0        = Variable(ty0.cuda())
         tx1        = Variable(tx1.cuda())
@@ -256,26 +256,26 @@ class RegionLoss(nn.Module):
         t3 = time.time()
 
         # Create loss
-        loss_x0    = self.coord_scale * nn.MSELoss(size_average=False)(x0*coord_mask, tx0*coord_mask)/2.0
-        loss_y0    = self.coord_scale * nn.MSELoss(size_average=False)(y0*coord_mask, ty0*coord_mask)/2.0
-        loss_x1    = self.coord_scale * nn.MSELoss(size_average=False)(x1*coord_mask, tx1*coord_mask)/2.0
-        loss_y1    = self.coord_scale * nn.MSELoss(size_average=False)(y1*coord_mask, ty1*coord_mask)/2.0
-        loss_x2    = self.coord_scale * nn.MSELoss(size_average=False)(x2*coord_mask, tx2*coord_mask)/2.0
-        loss_y2    = self.coord_scale * nn.MSELoss(size_average=False)(y2*coord_mask, ty2*coord_mask)/2.0
-        loss_x3    = self.coord_scale * nn.MSELoss(size_average=False)(x3*coord_mask, tx3*coord_mask)/2.0
-        loss_y3    = self.coord_scale * nn.MSELoss(size_average=False)(y3*coord_mask, ty3*coord_mask)/2.0
-        loss_x4    = self.coord_scale * nn.MSELoss(size_average=False)(x4*coord_mask, tx4*coord_mask)/2.0
-        loss_y4    = self.coord_scale * nn.MSELoss(size_average=False)(y4*coord_mask, ty4*coord_mask)/2.0
-        loss_x5    = self.coord_scale * nn.MSELoss(size_average=False)(x5*coord_mask, tx5*coord_mask)/2.0
-        loss_y5    = self.coord_scale * nn.MSELoss(size_average=False)(y5*coord_mask, ty5*coord_mask)/2.0
-        loss_x6    = self.coord_scale * nn.MSELoss(size_average=False)(x6*coord_mask, tx6*coord_mask)/2.0
-        loss_y6    = self.coord_scale * nn.MSELoss(size_average=False)(y6*coord_mask, ty6*coord_mask)/2.0
-        loss_x7    = self.coord_scale * nn.MSELoss(size_average=False)(x7*coord_mask, tx7*coord_mask)/2.0
-        loss_y7    = self.coord_scale * nn.MSELoss(size_average=False)(y7*coord_mask, ty7*coord_mask)/2.0
-        loss_x8    = self.coord_scale * nn.MSELoss(size_average=False)(x8*coord_mask, tx8*coord_mask)/2.0
-        loss_y8    = self.coord_scale * nn.MSELoss(size_average=False)(y8*coord_mask, ty8*coord_mask)/2.0
-        loss_conf  = nn.MSELoss(size_average=False)(conf*conf_mask, tconf*conf_mask)/2.0
-        # loss_cls   = self.class_scale * nn.CrossEntropyLoss(size_average=False)(cls, tcls)
+        loss_x0    = self.coord_scale * nn.MSELoss(reduction='sum')(x0*coord_mask, tx0*coord_mask)/2.0
+        loss_y0    = self.coord_scale * nn.MSELoss(reduction='sum')(y0*coord_mask, ty0*coord_mask)/2.0
+        loss_x1    = self.coord_scale * nn.MSELoss(reduction='sum')(x1*coord_mask, tx1*coord_mask)/2.0
+        loss_y1    = self.coord_scale * nn.MSELoss(reduction='sum')(y1*coord_mask, ty1*coord_mask)/2.0
+        loss_x2    = self.coord_scale * nn.MSELoss(reduction='sum')(x2*coord_mask, tx2*coord_mask)/2.0
+        loss_y2    = self.coord_scale * nn.MSELoss(reduction='sum')(y2*coord_mask, ty2*coord_mask)/2.0
+        loss_x3    = self.coord_scale * nn.MSELoss(reduction='sum')(x3*coord_mask, tx3*coord_mask)/2.0
+        loss_y3    = self.coord_scale * nn.MSELoss(reduction='sum')(y3*coord_mask, ty3*coord_mask)/2.0
+        loss_x4    = self.coord_scale * nn.MSELoss(reduction='sum')(x4*coord_mask, tx4*coord_mask)/2.0
+        loss_y4    = self.coord_scale * nn.MSELoss(reduction='sum')(y4*coord_mask, ty4*coord_mask)/2.0
+        loss_x5    = self.coord_scale * nn.MSELoss(reduction='sum')(x5*coord_mask, tx5*coord_mask)/2.0
+        loss_y5    = self.coord_scale * nn.MSELoss(reduction='sum')(y5*coord_mask, ty5*coord_mask)/2.0
+        loss_x6    = self.coord_scale * nn.MSELoss(reduction='sum')(x6*coord_mask, tx6*coord_mask)/2.0
+        loss_y6    = self.coord_scale * nn.MSELoss(reduction='sum')(y6*coord_mask, ty6*coord_mask)/2.0
+        loss_x7    = self.coord_scale * nn.MSELoss(reduction='sum')(x7*coord_mask, tx7*coord_mask)/2.0
+        loss_y7    = self.coord_scale * nn.MSELoss(reduction='sum')(y7*coord_mask, ty7*coord_mask)/2.0
+        loss_x8    = self.coord_scale * nn.MSELoss(reduction='sum')(x8*coord_mask, tx8*coord_mask)/2.0
+        loss_y8    = self.coord_scale * nn.MSELoss(reduction='sum')(y8*coord_mask, ty8*coord_mask)/2.0
+        loss_conf  = nn.MSELoss(reduction='sum')(conf*conf_mask, tconf*conf_mask)/2.0
+        # loss_cls   = self.class_scale * nn.CrossEntropyLoss(reduction='sum')(cls, tcls)
         loss_cls = 0
         loss_x     = loss_x0 + loss_x1 + loss_x2 + loss_x3 + loss_x4 + loss_x5 + loss_x6 + loss_x7 + loss_x8 
         loss_y     = loss_y0 + loss_y1 + loss_y2 + loss_y3 + loss_y4 + loss_y5 + loss_y6 + loss_y7 + loss_y8 
@@ -294,8 +294,8 @@ class RegionLoss(nn.Module):
             print('             total : %f' % (t4 - t0))
 
         if False:
-            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data[0], loss_y.data[0], loss_conf.data[0], loss_cls.data[0], loss.data[0]))
+            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, conf %f, cls %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.item(), loss_y.item(), loss_conf.item(), loss_cls.item(), loss.item()))
         else:
-            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, conf %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.data[0], loss_y.data[0], loss_conf.data[0], loss.data[0]))
+            print('%d: nGT %d, recall %d, proposals %d, loss: x %f, y %f, conf %f, total %f' % (self.seen, nGT, nCorrect, nProposals, loss_x.item(), loss_y.item(), loss_conf.item(), loss.item()))
         
         return loss
