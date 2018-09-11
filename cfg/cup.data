@@ -1,0 +1,7 @@
+train  = LINEMOD/cup/train.txt
+valid  = LINEMOD/cup/test.txt
+backup = backup/cup
+mesh = LINEMOD/cup/cup.ply
+tr_range = LINEMOD/cup/training_range.txt
+name = cup
+diam = 0.126

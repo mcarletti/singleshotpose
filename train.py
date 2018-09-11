@@ -275,7 +275,7 @@ def test(epoch, niter):
 if __name__ == "__main__":
 
     datafolder = '../DATA/linemod/'
-    cname = 'ape'
+    cname = 'cup'
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
