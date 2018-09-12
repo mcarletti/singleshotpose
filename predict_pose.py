@@ -12,10 +12,11 @@ import dataset
 from utils import *
 from MeshPly import MeshPly
 
-def load_model(cfgfile, weightfile):
+def load_model(cfgfile, weightfile,verbose=False):
     # Specify model, load pretrained weights, pass to GPU and set the module in evaluation mode
     model = Darknet(cfgfile)
-    model.print_network()
+    if verbose:
+        model.print_network()
     model.load_weights(weightfile)
     model.cuda()
     model.eval()
@@ -27,6 +28,7 @@ def valid(model, datafolder, datacfg, imagefilename):
     options      = read_data_cfg(datacfg)
     meshname     = datafolder + options['mesh']
     name         = options['name']
+    modelsize    = np.float32(options['diam'])
 
     # Parameters
     seed         = int(time.time())
@@ -90,37 +92,39 @@ def valid(model, datafolder, datacfg, imagefilename):
     # Compute [R|t] by pnp
     R_pr, t_pr = pnp(np.array(np.transpose(np.concatenate((np.zeros((3, 1)), corners3D[:3, :]), axis=1)), dtype='float32'),  corners2D_pr, np.array(internal_calibration, dtype='float32'))
 
-    def draw_axis(img, R, t, K):
+    def draw_axis(img, R, t, K, scale=1):
         import cv2
         # unit is mm
         rotV, _ = cv2.Rodrigues(R)
-        points = np.float32([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).reshape(-1, 3)
+        points = scale * np.float32([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).reshape(-1, 3)
         axisPoints, _ = cv2.projectPoints(points, rotV, t, K, (0, 0, 0, 0))
         img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
         img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0,255,0), 3)
         img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0,0,255), 3)
         return img
     
-    output_frame = draw_axis(np.asarray(image), R_pr, t_pr, internal_calibration)
+    output_frame = draw_axis(np.asarray(image), R_pr, t_pr, internal_calibration, scale=modelsize)
 
     import matplotlib.pyplot as plt
     plt.imshow(output_frame)
-    plt.show()
+    plt.pause(1)
 
     return R_pr, t_pr
 
 if __name__ == '__main__':
 
     datafolder = '../DATA/linemod/'
-    cname = 'ape'
-    imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/000000.jpg'
+    cname = 'cup'
 
     modelweights = datafolder + 'backup/' + cname
     if os.path.exists(modelweights + '/model.weights'):
         modelweights = modelweights + '/model.weights'
     else:
         modelweights = modelweights + '/model_backup.weights'
-    model = load_model('cfg/yolo-pose.cfg', modelweights)
-    R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
-    logging("    R: {}".format(R))
-    logging("    t: {}".format(t))
+    model = load_model('cfg/yolo-pose.cfg', modelweights, verbose=False)
+
+    for i in range(10):
+        imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/' + str(np.random.randint(0,1200)).zfill(6) + '.jpg'
+        R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
+        #logging("    R: {}".format(R))
+        #logging("    t: {}".format(t))
