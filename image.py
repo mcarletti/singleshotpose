@@ -175,9 +175,10 @@ def load_data_detection(imgpath, shape, jitter, hue, saturation, exposure, bgpat
     img = Image.open(imgpath).convert('RGB')
     bg = Image.open(bgpath).convert('RGB')
     
-    # UNCOMMENT TO CHANGE THE BACKGROUND
-    #mask = Image.open(maskpath).convert('RGB')
-    #img = change_background(img, mask, bg)
+    # change background if masks exist
+    if os.path.exists(maskpath):
+        mask = Image.open(maskpath).convert('RGB')
+        img = change_background(img, mask, bg)
 
     img,flip,dx,dy,sx,sy = data_augmentation(img, shape, jitter, hue, saturation, exposure)
     ow, oh = img.size
