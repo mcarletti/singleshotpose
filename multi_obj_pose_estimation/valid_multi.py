@@ -13,7 +13,7 @@ from utils import *
 import dataset_multi
 from MeshPly import MeshPly
 
-def valid(datacfg, cfgfile, weightfile, conf_th):
+def valid(datafolder, datacfg, cfgfile, weightfile, conf_th):
     def truths_length(truths):
         for i in range(50):
             if truths[i][1] == 0:
@@ -21,8 +21,8 @@ def valid(datacfg, cfgfile, weightfile, conf_th):
 
     # Parse configuration files
     options       = read_data_cfg(datacfg)
-    valid_images  = options['valid']
-    meshname      = options['mesh']
+    valid_images  = datafolder + options['valid'][3:]
+    meshname      = datafolder + options['mesh'][3:]
     name          = options['name']
     prefix        = 'results'
     # Read object model information, get 3D bounding box corners
@@ -37,16 +37,16 @@ def valid(datacfg, cfgfile, weightfile, conf_th):
     # Get validation file names
     with open(valid_images) as fp:
         tmp_files = fp.readlines()
-        valid_files = [item.rstrip() for item in tmp_files]
+        valid_files = [datafolder + item.rstrip()[3:] for item in tmp_files]
     
     # Specicy model, load pretrained weights, pass to GPU and set the module in evaluation mode
     model = Darknet(cfgfile)
-    model.load_weights(weightfile)
+    model.load_weights(datafolder + weightfile)
     model.cuda()
     model.eval()
 
     # Get the parser for the test dataset
-    valid_dataset = dataset_multi.listDataset(valid_images, shape=(model.width, model.height),
+    valid_dataset = dataset_multi.listDataset(valid_files, shape=(model.width, model.height),
                        shuffle=False,
                        objclass=name,
                        transform=transforms.Compose([
@@ -163,21 +163,23 @@ def valid(datacfg, cfgfile, weightfile, conf_th):
 if __name__ == '__main__' and __package__ is None:
     import sys
     if len(sys.argv) == 3:
+        datafolder = '../../DATA/linemod/'
+
         conf_th = 0.05
         cfgfile = sys.argv[1]
         weightfile = sys.argv[2]
         datacfg = 'cfg/ape_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
         datacfg = 'cfg/can_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
         datacfg = 'cfg/cat_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
         datacfg = 'cfg/duck_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
         datacfg = 'cfg/glue_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
         datacfg = 'cfg/holepuncher_occlusion.data'
-        valid(datacfg, cfgfile, weightfile, conf_th)
+        valid(datafolder, datacfg, cfgfile, weightfile, conf_th)
     else:
         print('Usage:')
         print(' python valid.py cfgfile weightfile')

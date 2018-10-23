@@ -14,21 +14,25 @@ from image_multi import *
 class listDataset(Dataset):
 
     def __init__(self, root, shape=None, shuffle=True, transform=None, objclass=None, target_transform=None, train=False, seen=0, batch_size=64, num_workers=4, bg_file_names=None): # bg='/cvlabdata1/home/btekin/ope/data/office_bg'
-       with open(root, 'r') as file:
-           self.lines = file.readlines()
-       if shuffle:
-           random.shuffle(self.lines)
-       self.nSamples         = len(self.lines)
-       self.transform        = transform
-       self.target_transform = target_transform
-       self.train            = train
-       self.shape            = shape
-       self.seen             = seen
-       self.batch_size       = batch_size
-       self.num_workers      = num_workers
-       # self.bg_file_names    = get_all_files(bg)
-       self.bg_file_names    = bg_file_names
-       self.objclass         = objclass
+                
+        self.lines = root
+        #with open(root, 'r') as file:
+        #    self.lines = file.readlines()
+
+        if shuffle:
+            random.shuffle(self.lines)
+
+        self.nSamples         = len(self.lines)
+        self.transform        = transform
+        self.target_transform = target_transform
+        self.train            = train
+        self.shape            = shape
+        self.seen             = seen
+        self.batch_size       = batch_size
+        self.num_workers      = num_workers
+        # self.bg_file_names    = get_all_files(bg)
+        self.bg_file_names    = bg_file_names
+        self.objclass         = objclass
 
     def __len__(self):
         return self.nSamples
