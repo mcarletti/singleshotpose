@@ -401,6 +401,7 @@ def get_region_boxes(output, conf_thresh, num_classes, only_objectness=1, valida
         max_conf = -1
         for cy in range(h):
             for cx in range(w):
+                # sembra che questi siano i riquadri in cui viene divisa l'immagine
                 for i in range(anchor_dim):
                     ind = b*sz_hwa + i*sz_hw + cy*w + cx
                     det_conf =  det_confs[ind]

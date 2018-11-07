@@ -22,7 +22,7 @@ def load_model(cfgfile, weightfile,verbose=False):
     model.eval()
     return model
 
-def valid(model, datafolder, datacfg, imagefilename):
+def valid(model, datafolder, datacfg, inputimage, shape=None):
 
     # Parse configuration files
     options      = read_data_cfg(datacfg)
@@ -38,7 +38,6 @@ def valid(model, datafolder, datacfg, imagefilename):
     if use_cuda:
         os.environ['CUDA_VISIBLE_DEVICES'] = gpus
         torch.cuda.manual_seed(seed)
-    use_cuda        = True
     num_classes     = 1
     conf_thresh     = 0.1
 
@@ -55,7 +54,15 @@ def valid(model, datafolder, datacfg, imagefilename):
 
     logging("   Testing {}...".format(name))
 
-    image = Image.open(imagefilename).convert('RGB')
+    if isinstance(inputimage, str):
+        image = Image.open(inputimage).convert('RGB')
+        if shape is not None:
+            image = image.resize(shape)
+    else:
+        # to avoid the error:
+        # some of the strides of a given numpy array are negative. This is currently not supported, but will be added in future releases.
+        # ref: https://discuss.pytorch.org/t/torch-from-numpy-not-support-negative-strides/3663
+        image = inputimage.copy()
     transf = transforms.Compose([transforms.ToTensor(),])
     data = transf(image)
     data.unsqueeze_(0)
@@ -74,14 +81,24 @@ def valid(model, datafolder, datacfg, imagefilename):
     all_boxes = get_region_boxes(output, conf_thresh, num_classes)
     
     # Get all the predictions
-    boxes   = all_boxes[0]
+    #boxes   = all_boxes[0]
 
     best_conf_est = -1
 
     # If the prediction has the highest confidence, choose it as our prediction for single object pose estimation
-    for j in range(len(boxes)):
-        if (boxes[j][18] > best_conf_est):
-            box_pr        = boxes[j]
+    ##
+    #
+    # boxes[j] sono relative ad una sola detection
+    # il ciclo for sulla confidenza e' per scegliere solo
+    # la detection piu' confidente di questo oggetto
+    #
+    ##
+    for i in range(len(all_boxes)):
+        boxes = all_boxes[i]
+        for j in range(len(boxes)):
+            if (boxes[j][18] > best_conf_est):
+                box_pr        = boxes[j]
+                best_conf_est = boxes[j][18]
 
     # Denormalize the corner predictions 
     corners2D_pr = np.array(np.reshape(box_pr[:18], [9, 2]), dtype='float32')
@@ -90,26 +107,10 @@ def valid(model, datafolder, datacfg, imagefilename):
     preds_corners2D.append(corners2D_pr)
     
     # Compute [R|t] by pnp
-    R_pr, t_pr = pnp(np.array(np.transpose(np.concatenate((np.zeros((3, 1)), corners3D[:3, :]), axis=1)), dtype='float32'),  corners2D_pr, np.array(internal_calibration, dtype='float32'))
+    points3D = np.array(np.transpose(np.concatenate((np.zeros((3, 1)), corners3D[:3, :]), axis=1)), dtype='float32')
+    R_pr, t_pr = pnp(points3D, corners2D_pr, internal_calibration.astype(np.float32))
 
-    def draw_axis(img, R, t, K, scale=1):
-        import cv2
-        # unit is mm
-        rotV, _ = cv2.Rodrigues(R)
-        points = scale * np.float32([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).reshape(-1, 3)
-        axisPoints, _ = cv2.projectPoints(points, rotV, t, K, (0, 0, 0, 0))
-        img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[0].ravel()), (255,0,0), 3)
-        img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[1].ravel()), (0,255,0), 3)
-        img = cv2.line(img, tuple(axisPoints[3].ravel()), tuple(axisPoints[2].ravel()), (0,0,255), 3)
-        return img
-    
-    output_frame = draw_axis(np.asarray(image), R_pr, t_pr, internal_calibration, scale=modelsize)
-
-    import matplotlib.pyplot as plt
-    plt.imshow(output_frame)
-    plt.pause(1)
-
-    return R_pr, t_pr
+    return R_pr, t_pr, all_boxes, modelsize
 
 if __name__ == '__main__':
 
@@ -126,5 +127,3 @@ if __name__ == '__main__':
     for i in range(10):
         imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/' + str(np.random.randint(0,1200)).zfill(6) + '.jpg'
         R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
-        #logging("    R: {}".format(R))
-        #logging("    t: {}".format(t))
