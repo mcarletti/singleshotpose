@@ -52,7 +52,7 @@ def valid(model, datafolder, datacfg, inputimage, shape=None):
     # Read intrinsic camera parameters
     internal_calibration = get_camera_intrinsic()
 
-    logging("   Testing {}...".format(name))
+    #logging("   Testing {}...".format(name))
 
     if isinstance(inputimage, str):
         image = Image.open(inputimage).convert('RGB')
