@@ -62,7 +62,9 @@ def valid(model, datafolder, datacfg, inputimage, shape=None):
         # to avoid the error:
         # some of the strides of a given numpy array are negative. This is currently not supported, but will be added in future releases.
         # ref: https://discuss.pytorch.org/t/torch-from-numpy-not-support-negative-strides/3663
-        image = inputimage.copy()
+        image = Image.fromarray(inputimage)
+        if shape is not None:
+            image = image.resize(shape)
     transf = transforms.Compose([transforms.ToTensor(),])
     data = transf(image)
     data.unsqueeze_(0)
@@ -110,7 +112,7 @@ def valid(model, datafolder, datacfg, inputimage, shape=None):
     points3D = np.array(np.transpose(np.concatenate((np.zeros((3, 1)), corners3D[:3, :]), axis=1)), dtype='float32')
     R_pr, t_pr = pnp(points3D, corners2D_pr, internal_calibration.astype(np.float32))
 
-    return R_pr, t_pr, all_boxes, modelsize
+    return R_pr, t_pr, all_boxes, modelsize, best_conf_est
 
 if __name__ == '__main__':
 
