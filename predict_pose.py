@@ -26,7 +26,7 @@ def valid(model, datafolder, datacfg, inputimage, shape=None):
 
     # Parse configuration files
     options      = read_data_cfg(datacfg)
-    meshname     = datafolder + options['mesh']
+    meshname     = os.path.join(datafolder, options['mesh'])
     name         = options['name']
     modelsize    = np.float32(options['diam'])
 
@@ -116,8 +116,8 @@ def valid(model, datafolder, datacfg, inputimage, shape=None):
 
 if __name__ == '__main__':
 
-    datafolder = '../DATA/linemod/'
-    cname = 'cup'
+    datafolder = '/media/Data/datasets/SingleShotPose/'
+    cname = 'can'
 
     modelweights = datafolder + 'backup/' + cname
     if os.path.exists(modelweights + '/model.weights'):
@@ -128,4 +128,5 @@ if __name__ == '__main__':
 
     for i in range(10):
         imagefilename = datafolder + 'LINEMOD/' + cname + '/JPEGImages/' + str(np.random.randint(0,1200)).zfill(6) + '.jpg'
-        R, t = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
+        R, t, _, _, _ = valid(model, datafolder, 'cfg/' + cname + '.data', imagefilename)
+

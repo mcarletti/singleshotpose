@@ -256,8 +256,8 @@ def valid(datafolder, datacfg, cfgfile, weightfile, outfile):
 
 if __name__ == '__main__':
 
-    datafolder = '../DATA/linemod/'
-    cname = 'cup'
+    datafolder = '/media/Data/datasets/SingleShotPose/'
+    cname = 'can'
 
     datacfg = 'cfg/' + cname + '.data'
     cfgfile = 'cfg/yolo-pose.cfg'
